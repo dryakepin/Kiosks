@@ -324,15 +324,9 @@
             const errorEl = document.getElementById('error');
             const countEl = document.getElementById('kiosk-count');
 
-            // ODAA (Open Data Aarhus) API endpoints to try
-            // Resource ID: 3ace0e47-46a7-4ab8-9d7a-2da81fff641f (kioskerwgs84.json)
+            // ODAA (Open Data Aarhus) GeoJSON endpoint
             const endpoints = [
-                // Open Data DK resource proxy (most reliable)
-                'https://www.opendata.dk/api/resources/3ace0e47-46a7-4ab8-9d7a-2da81fff641f/proxy',
-                // CKAN datastore API
-                'https://portal.opendata.dk/api/3/action/datastore_search?resource_id=3ace0e47-46a7-4ab8-9d7a-2da81fff641f&limit=1000',
-                // Alternative CKAN endpoint
-                'https://www.odaa.dk/api/3/action/datastore_search?resource_id=3ace0e47-46a7-4ab8-9d7a-2da81fff641f&limit=1000'
+                'https://admin.opendata.dk/dataset/2d5e2ffa-2341-4b32-876f-73b1df1ffa04/resource/3ace0e47-46a7-4ab8-9d7a-2da81fff641f/download/kioskerwgs84.json'
             ];
 
             let kioskCount = 0;
