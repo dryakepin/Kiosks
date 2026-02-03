@@ -69,59 +69,6 @@
             color: #333;
         }
 
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .loading-overlay.hidden {
-            display: none;
-        }
-
-        .loading-spinner {
-            text-align: center;
-        }
-
-        .loading-spinner .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            position: absolute;
-            top: 80px;
-            left: 50px;
-            z-index: 1000;
-            background: #fee;
-            border: 1px solid #fcc;
-            color: #c00;
-            padding: 12px 20px;
-            border-radius: 8px;
-            max-width: 400px;
-        }
-
-        .error-message.hidden {
-            display: none;
-        }
-
         .kiosk-count {
             position: absolute;
             bottom: 20px;
@@ -141,27 +88,35 @@
         <p>Klik på en markering for at se detaljer</p>
     </div>
 
-    <div id="loading" class="loading-overlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <p>Indlaeser kiosker...</p>
-        </div>
-    </div>
-
-    <div id="error" class="error-message hidden"></div>
-
     <div id="map"></div>
 
     <div id="kiosk-count" class="kiosk-count"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Kiosk data from Open Data Aarhus
+        const kiosks = [
+            { navn: "Kiosk ved Havreballe Skov; Skovbrynet", adresse: "Skovbrynet 1", type: "Kiosker", bookbar: "Nej", coords: [56.13872, 10.205476] },
+            { navn: "Kiosk ved Tangkrogen", adresse: "Strandvejen 19", type: "Kiosker", bookbar: "Nej", coords: [56.139317, 10.207303] },
+            { navn: "Kiosk ved Den Permanente", adresse: "Salonvejen 3", type: "Kiosker", bookbar: "Nej", coords: [56.176728, 10.230386] },
+            { navn: "Kiosk ved Hestehaven", adresse: "Strandvejen 37", type: "Kiosker", bookbar: "Nej", coords: [56.126349, 10.213655] },
+            { navn: "Kiosk ved Riis Skov", adresse: "Marienlundsvej 2", type: "Kiosker", bookbar: "Nej", coords: [56.177535, 10.219719] },
+            { navn: "Kiosk ved Havreballe Skov, Stadion Allé", adresse: "Stadion Allé 66", type: "Kiosker", bookbar: "Nej", coords: [56.137018, 10.195244] },
+            { navn: "Kiosk ved Mindeparken", adresse: "Carl Nielsens Vej 17", type: "Kiosker", bookbar: "Nej", coords: [56.130207, 10.20298] },
+            { navn: "Kiosk ved Bellevue Strandpark", adresse: "Fortevej 115", type: "Kiosker", bookbar: "Nej", coords: [56.19051, 10.247237] },
+            { navn: "Kiosk ved Ågrog Strandpark", adresse: "Ågrogs Strandvej 36", type: "Kiosker", bookbar: "Nej", coords: [56.202745, 10.282155] },
+            { navn: "Kiosk ved Skåde Skov", adresse: "Ørneredevej 55", type: "Kiosker", bookbar: "Nej", coords: [56.101315, 10.237039] },
+            { navn: "Kiosk ved Moesgård Strand", adresse: "Strandskovvej 21", type: "Kiosker", bookbar: "Nej", coords: [56.08897, 10.247685] },
+            { navn: "Kiosk ved Moesgård Museum", adresse: "Moesgård Allé 23", type: "Kiosker", bookbar: "Nej", coords: [56.087183, 10.225767] },
+            { navn: "Kiosk ved Blommehaven", adresse: "Campingkiosken", type: "Kiosker", bookbar: "Nej", coords: [56.110284, 10.232246] }
+        ];
+
         // Initialize the map centered on Aarhus
-        const map = L.map('map').setView([56.1629, 10.2039], 13);
+        const map = L.map('map').setView([56.1629, 10.2039], 12);
 
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Data: <a href="https://www.opendata.dk/city-of-aarhus/kiosker">Open Data Aarhus</a>'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | Data: <a href="https://www.opendata.dk/city-of-aarhus/kiosker">Open Data Aarhus</a>'
         }).addTo(map);
 
         // Custom kiosk icon
@@ -177,260 +132,29 @@
             popupAnchor: [0, -40]
         });
 
-        // Layer group for kiosk markers
-        const kioskLayer = L.layerGroup().addTo(map);
+        // Add markers for each kiosk
+        const markers = [];
+        kiosks.forEach(kiosk => {
+            const popupContent = `
+                <div class="kiosk-popup">
+                    <h3>${kiosk.navn}</h3>
+                    <div class="detail"><span class="label">Adresse:</span> <span class="value">${kiosk.adresse}</span></div>
+                    <div class="detail"><span class="label">Type:</span> <span class="value">${kiosk.type}</span></div>
+                    <div class="detail"><span class="label">Bookbar:</span> <span class="value">${kiosk.bookbar}</span></div>
+                </div>
+            `;
+            const marker = L.marker(kiosk.coords, { icon: kioskIcon })
+                .bindPopup(popupContent)
+                .addTo(map);
+            markers.push(marker);
+        });
 
-        // Function to create popup content
-        function createPopupContent(properties) {
-            let content = '<div class="kiosk-popup">';
+        // Fit map to show all markers
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
 
-            // Try different possible property names for the kiosk name
-            const name = properties.navn || properties.name || properties.NAVN || properties.NAME || 'Ukendt kiosk';
-            content += `<h3>${name}</h3>`;
-
-            // Address
-            const address = properties.adresse || properties.address || properties.ADRESSE || properties.vejnavn;
-            if (address) {
-                content += `<div class="detail"><span class="label">Adresse:</span> <span class="value">${address}</span></div>`;
-            }
-
-            // Postal code and city
-            const postalCode = properties.postnr || properties.postnummer || properties.postal_code;
-            const city = properties.by || properties.city || properties.bynavn || 'Aarhus';
-            if (postalCode) {
-                content += `<div class="detail"><span class="label">By:</span> <span class="value">${postalCode} ${city}</span></div>`;
-            }
-
-            // Type/category
-            const type = properties.type || properties.kategori || properties.category;
-            if (type) {
-                content += `<div class="detail"><span class="label">Type:</span> <span class="value">${type}</span></div>`;
-            }
-
-            // Opening hours
-            const hours = properties.aabningstider || properties.opening_hours || properties.aabningstid;
-            if (hours) {
-                content += `<div class="detail"><span class="label">Abningstider:</span> <span class="value">${hours}</span></div>`;
-            }
-
-            // Phone
-            const phone = properties.telefon || properties.phone || properties.tlf;
-            if (phone) {
-                content += `<div class="detail"><span class="label">Telefon:</span> <span class="value">${phone}</span></div>`;
-            }
-
-            // Additional info - show any other properties
-            const knownKeys = ['navn', 'name', 'NAVN', 'NAME', 'adresse', 'address', 'ADRESSE', 'vejnavn',
-                              'postnr', 'postnummer', 'postal_code', 'by', 'city', 'bynavn',
-                              'type', 'kategori', 'category', 'aabningstider', 'opening_hours', 'aabningstid',
-                              'telefon', 'phone', 'tlf', 'geometry', 'coordinates', 'lat', 'lng', 'lon',
-                              'latitude', 'longitude', 'wkb_geometry', 'ogc_fid', 'id', '_id'];
-
-            for (const [key, value] of Object.entries(properties)) {
-                if (!knownKeys.includes(key.toLowerCase()) && value && typeof value !== 'object') {
-                    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
-                    content += `<div class="detail"><span class="label">${label}:</span> <span class="value">${value}</span></div>`;
-                }
-            }
-
-            content += '</div>';
-            return content;
-        }
-
-        // Function to add kiosks to map from GeoJSON
-        function addKiosksFromGeoJSON(geojson) {
-            const features = geojson.features || geojson;
-            let count = 0;
-
-            features.forEach(feature => {
-                let coords;
-                let properties = feature.properties || feature;
-
-                // Handle different coordinate formats
-                if (feature.geometry && feature.geometry.coordinates) {
-                    // Standard GeoJSON format
-                    coords = feature.geometry.coordinates;
-                } else if (properties.longitude && properties.latitude) {
-                    coords = [parseFloat(properties.longitude), parseFloat(properties.latitude)];
-                } else if (properties.lon && properties.lat) {
-                    coords = [parseFloat(properties.lon), parseFloat(properties.lat)];
-                } else if (properties.lng && properties.lat) {
-                    coords = [parseFloat(properties.lng), parseFloat(properties.lat)];
-                }
-
-                if (coords && coords.length >= 2) {
-                    // GeoJSON uses [longitude, latitude], Leaflet uses [latitude, longitude]
-                    const marker = L.marker([coords[1], coords[0]], { icon: kioskIcon })
-                        .bindPopup(createPopupContent(properties));
-                    kioskLayer.addLayer(marker);
-                    count++;
-                }
-            });
-
-            return count;
-        }
-
-        // Function to add kiosks from CKAN datastore response
-        function addKiosksFromDatastore(data) {
-            const records = data.result?.records || data.records || [];
-            let count = 0;
-
-            records.forEach(record => {
-                let coords;
-
-                // Try to extract coordinates from various formats
-                if (record.wkb_geometry) {
-                    // WKB geometry - try to parse if it's in a readable format
-                    const match = record.wkb_geometry.match(/POINT\s*\(\s*([\d.]+)\s+([\d.]+)\s*\)/i);
-                    if (match) {
-                        coords = [parseFloat(match[1]), parseFloat(match[2])];
-                    }
-                } else if (record.geometry) {
-                    if (typeof record.geometry === 'string') {
-                        try {
-                            const geom = JSON.parse(record.geometry);
-                            coords = geom.coordinates;
-                        } catch (e) {
-                            const match = record.geometry.match(/POINT\s*\(\s*([\d.]+)\s+([\d.]+)\s*\)/i);
-                            if (match) {
-                                coords = [parseFloat(match[1]), parseFloat(match[2])];
-                            }
-                        }
-                    } else if (record.geometry.coordinates) {
-                        coords = record.geometry.coordinates;
-                    }
-                } else if (record.longitude && record.latitude) {
-                    coords = [parseFloat(record.longitude), parseFloat(record.latitude)];
-                } else if (record.lon && record.lat) {
-                    coords = [parseFloat(record.lon), parseFloat(record.lat)];
-                } else if (record.x && record.y) {
-                    coords = [parseFloat(record.x), parseFloat(record.y)];
-                }
-
-                if (coords && coords.length >= 2) {
-                    const marker = L.marker([coords[1], coords[0]], { icon: kioskIcon })
-                        .bindPopup(createPopupContent(record));
-                    kioskLayer.addLayer(marker);
-                    count++;
-                }
-            });
-
-            return count;
-        }
-
-        // Fetch kiosk data
-        async function fetchKiosks() {
-            const loadingEl = document.getElementById('loading');
-            const errorEl = document.getElementById('error');
-            const countEl = document.getElementById('kiosk-count');
-
-            // ODAA (Open Data Aarhus) GeoJSON endpoint
-            const endpoints = [
-                'https://admin.opendata.dk/dataset/2d5e2ffa-2341-4b32-876f-73b1df1ffa04/resource/3ace0e47-46a7-4ab8-9d7a-2da81fff641f/download/kioskerwgs84.json'
-            ];
-
-            let kioskCount = 0;
-            let success = false;
-
-            for (const url of endpoints) {
-                try {
-                    console.log('Trying endpoint:', url);
-                    const response = await fetch(url);
-
-                    if (!response.ok) {
-                        console.log('Endpoint failed with status:', response.status);
-                        continue;
-                    }
-
-                    const data = await response.json();
-                    console.log('Data received:', data);
-
-                    // Check if it's GeoJSON format
-                    if (data.type === 'FeatureCollection' || Array.isArray(data.features)) {
-                        kioskCount = addKiosksFromGeoJSON(data);
-                    }
-                    // Check if it's CKAN datastore format
-                    else if (data.result?.records || data.records) {
-                        kioskCount = addKiosksFromDatastore(data);
-                    }
-                    // Try treating as array of features
-                    else if (Array.isArray(data)) {
-                        kioskCount = addKiosksFromGeoJSON({ features: data });
-                    }
-
-                    if (kioskCount > 0) {
-                        success = true;
-                        break;
-                    }
-                } catch (error) {
-                    console.error('Error fetching from', url, error);
-                }
-            }
-
-            loadingEl.classList.add('hidden');
-
-            if (success && kioskCount > 0) {
-                countEl.textContent = `${kioskCount} kiosker fundet`;
-
-                // Fit map to show all markers
-                if (kioskLayer.getLayers().length > 0) {
-                    const group = L.featureGroup(kioskLayer.getLayers());
-                    map.fitBounds(group.getBounds().pad(0.1));
-                }
-            } else {
-                // Show error and load sample data for demonstration
-                errorEl.textContent = 'Kunne ikke hente data fra API. Viser eksempeldata.';
-                errorEl.classList.remove('hidden');
-
-                // Load sample data for demonstration
-                loadSampleData();
-            }
-        }
-
-        // Sample data for demonstration when API is unavailable
-        function loadSampleData() {
-            const sampleKiosks = {
-                type: 'FeatureCollection',
-                features: [
-                    {
-                        type: 'Feature',
-                        geometry: { type: 'Point', coordinates: [10.2039, 56.1629] },
-                        properties: { navn: 'Central Kiosk', adresse: 'Store Torv 1', postnr: '8000', by: 'Aarhus C', type: 'Kiosk' }
-                    },
-                    {
-                        type: 'Feature',
-                        geometry: { type: 'Point', coordinates: [10.2134, 56.1567] },
-                        properties: { navn: 'Banegaard Kiosk', adresse: 'Banegaardspladsen 5', postnr: '8000', by: 'Aarhus C', type: 'Kiosk' }
-                    },
-                    {
-                        type: 'Feature',
-                        geometry: { type: 'Point', coordinates: [10.1892, 56.1712] },
-                        properties: { navn: 'Universitets Kiosk', adresse: 'Nordre Ringgade 1', postnr: '8000', by: 'Aarhus C', type: 'Kiosk' }
-                    },
-                    {
-                        type: 'Feature',
-                        geometry: { type: 'Point', coordinates: [10.2267, 56.1498] },
-                        properties: { navn: 'Havnen Kiosk', adresse: 'Havnegade 22', postnr: '8000', by: 'Aarhus C', type: 'Kiosk' }
-                    },
-                    {
-                        type: 'Feature',
-                        geometry: { type: 'Point', coordinates: [10.1756, 56.1823] },
-                        properties: { navn: 'Risskov Kiosk', adresse: 'Risskov Strandvej 45', postnr: '8240', by: 'Risskov', type: 'Kiosk' }
-                    }
-                ]
-            };
-
-            const count = addKiosksFromGeoJSON(sampleKiosks);
-            document.getElementById('kiosk-count').textContent = `${count} eksempel-kiosker vist`;
-
-            if (kioskLayer.getLayers().length > 0) {
-                const group = L.featureGroup(kioskLayer.getLayers());
-                map.fitBounds(group.getBounds().pad(0.1));
-            }
-        }
-
-        // Initialize
-        fetchKiosks();
+        // Show kiosk count
+        document.getElementById('kiosk-count').textContent = `${kiosks.length} kiosker`;
     </script>
 </body>
 </html>
